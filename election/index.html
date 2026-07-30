@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>市川市 選挙結果レポート一覧</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Yu Gothic", "Hiragino Sans", sans-serif;
+    margin: 0; padding: 0; background: #f3f5f7; color: #222;
+  }
+  .header {
+    background: linear-gradient(135deg, #1F4E78 0%, #2E6DA4 100%);
+    color: white; padding: 28px 24px;
+  }
+  .header .breadcrumb { font-size: 13px; opacity: 0.85; margin-bottom: 8px; }
+  .header .breadcrumb a { color: #cfe3f5; text-decoration: none; }
+  .header .breadcrumb a:hover { text-decoration: underline; }
+  .header h1 { margin: 0; font-size: 24px; }
+  .header .sub { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 20px 60px; }
+  .card-list { display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    display: block; background: white; border-radius: 10px;
+    padding: 18px 20px; text-decoration: none; color: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 5px solid #2E6DA4;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+  .card .tag {
+    display: inline-block; font-size: 11px; padding: 2px 8px;
+    border-radius: 10px; margin-bottom: 6px; font-weight: bold;
+  }
+  .tag.final { background: #E3EEDD; color: #2E7D32; }
+  .tag.compare { background: #FDECEA; color: #C62828; }
+  .tag.archive { background: #ECEFF1; color: #546E7A; }
+  .card h2 { margin: 4px 0 6px; font-size: 17px; color: #1F4E78; }
+  .card p { margin: 0; font-size: 13px; color: #555; line-height: 1.6; }
+  .footer { text-align: center; font-size: 12px; color: #999; padding: 20px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="breadcrumb"><a href="../">データポータル トップ</a> ／ 選挙結果</div>
+  <h1>🗳️ 市川市 選挙結果レポート</h1>
+  <div class="sub">市川市長選挙の投票率を、地図・データで可視化したレポート集です</div>
+</div>
+
+<div class="container">
+  <div class="card-list">
+
+    <a class="card" href="2026-final.html">
+      <span class="tag final">最新・確定値</span>
+      <h2>2026年 市川市長選挙 投票率マップ（確定版）</h2>
+      <p>令和8年4月19日執行分の確定投票率。投票所ごとの投票率を色（青〜赤）、有権者数をバブルの大きさで表現した地図です。全体投票率31.97%。</p>
+    </a>
+
+    <a class="card" href="2022-2026-compare.html">
+      <span class="tag compare">比較分析</span>
+      <h2>投票率の変化（2022年 → 2026年）</h2>
+      <p>前回（令和4年）と今回（令和8年）の投票率を投票所単位で比較。全78区すべてで投票率が低下し、平均7.0ポイントの減少。地理的な傾向も確認できます。</p>
+    </a>
+
+    <a class="card" href="2022-map.html">
+      <span class="tag archive">過去データ</span>
+      <h2>2022年 市川市長選挙 投票率マップ</h2>
+      <p>令和4年3月27日執行分の投票率マップ。全体投票率38.75%。市の南部（行徳・南行徳）と中央部（八幡・菅野）で明確な差が見られました。</p>
+    </a>
+
+  </div>
+</div>
+
+<div class="footer">
+  出典：市川市選挙管理委員会、市川市オープンデータ、国土交通省 国土数値情報
+</div>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>市川市長選挙 投票率バブルチャート</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body { font-family: "Yu Gothic", "Hiragino Sans", sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+.header {
+  background: linear-gradient(135deg, #1F4E78 0%, #2E6DA4 100%);
+  color: white; padding: 16px 24px;
+}
+.header h1 { margin: 0; font-size: 20px; }
+.header .sub { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+.stats {
+  display: flex; gap: 16px; background: white; padding: 12px 24px;
+  border-bottom: 1px solid #ddd; font-size: 13px; flex-wrap: wrap;
+}
+.stat-item { display: flex; flex-direction: column; }
+.stat-label { color: #666; font-size: 11px; }
+.stat-value { font-weight: bold; color: #1F4E78; font-size: 15px; }
+#map { height: calc(100vh - 140px); min-height: 500px; width: 100%; }
+.legend {
+  background: white; padding: 12px 16px; border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-size: 12px;
+  line-height: 1.6;
+}
+.legend-title { font-weight: bold; margin-bottom: 8px; color: #1F4E78; }
+.legend-gradient {
+  display: flex; align-items: center; gap: 8px; margin: 4px 0;
+}
+.gradient-bar {
+  width: 180px; height: 14px; border-radius: 3px;
+  background: linear-gradient(to right, #d73027 0%, #fc8d59 25%, #fee08b 50%, #d9ef8b 75%, #1a9850 100%);
+  border: 1px solid #999;
+}
+.legend-size { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.size-circle {
+  border-radius: 50%; background: rgba(150,150,150,0.5);
+  border: 1.5px solid #555;
+}
+.popup-content { font-size: 13px; line-height: 1.5; min-width: 220px; }
+.popup-content h3 { margin: 0 0 6px 0; color: #1F4E78; font-size: 14px; }
+.popup-content table { border-collapse: collapse; margin-top: 6px; width: 100%; }
+.popup-content td { padding: 2px 4px; }
+.popup-content td:first-child { color: #666; white-space: nowrap; }
+.popup-content td:last-child { text-align: right; font-weight: bold; }
+.rate-highlight { color: #d73027; font-size: 16px !important; }
+.rate-highlight.high { color: #1a9850; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🗺️ 市川市長選挙（令和4年3月27日）投票率バブルチャート</h1>
+  <div class="sub">色 = 投票率（赤=低／緑=高）・大きさ = 有権者数</div>
+</div>
+<div class="stats">
+  <div class="stat-item"><span class="stat-label">全体投票率</span><span class="stat-value">38.75%</span></div>
+  <div class="stat-item"><span class="stat-label">有権者総数</span><span class="stat-value">400,508人</span></div>
+  <div class="stat-item"><span class="stat-label">投票者総数</span><span class="stat-value">155,197人</span></div>
+  <div class="stat-item"><span class="stat-label">投票区数</span><span class="stat-value">78区</span></div>
+  <div class="stat-item"><span class="stat-label">投票率レンジ</span><span class="stat-value">26.11%〜51.70%</span></div>
+</div>
+<div id="map"></div>
+
+<script>
+const points = [{"ku": 1, "name": "塩浜学園", "lat": 35.66471272, "lng": 139.9147933, "rate": 37.35, "rate_m": 35.98, "rate_f": 38.65, "voters": 4241, "turnout": 1584, "early_ratio": 31.123737373737377, "address": "千葉県市川市塩浜4丁目5-1"}, {"ku": 2, "name": "南行徳ハイツ自治会館", "lat": 35.66757883, "lng": 139.9039155, "rate": 32.19, "rate_m": 31.13, "rate_f": 33.35, "voters": 3883, "turnout": 1250, "early_ratio": 20.72, "address": "千葉県市川市南行徳3丁目7-3"}, {"ku": 3, "name": "新井地域ふれあい館", "lat": 35.66979575, "lng": 139.898744, "rate": 27.89, "rate_m": 26.83, "rate_f": 29.12, "voters": 5389, "turnout": 1503, "early_ratio": 25.482368596141054, "address": "千葉県市川市新井3丁目31-1"}, {"ku": 4, "name": "新井小学校", "lat": 35.67394669, "lng": 139.8905166, "rate": 28.57, "rate_m": 27.84, "rate_f": 29.37, "voters": 6704, "turnout": 1915, "early_ratio": 14.778067885117494, "address": "千葉県市川市新井1丁目18-13"}, {"ku": 5, "name": "広尾防災公園管理棟", "lat": 35.67879369, "lng": 139.8893295, "rate": 28.05, "rate_m": 26.8, "rate_f": 29.43, "voters": 3465, "turnout": 972, "early_ratio": 19.650205761316872, "address": "千葉県市川市広尾2丁目3-2"}, {"ku": 6, "name": "南行徳公民館", "lat": 35.68022789, "lng": 139.899113, "rate": 31.99, "rate_m": 29.58, "rate_f": 34.59, "voters": 4924, "turnout": 1575, "early_ratio": 20.19047619047619, "address": "千葉県市川市相之川1丁目3-7"}, {"ku": 7, "name": "富美浜地域ふれあい館", "lat": 35.67541344, "lng": 139.9054941, "rate": 26.11, "rate_m": 24.93, "rate_f": 27.5, "voters": 7852, "turnout": 2050, "early_ratio": 30.48780487804878, "address": "千葉県市川市欠真間2丁目31-5"}, {"ku": 8, "name": "富美浜小学校", "lat": 35.671495, "lng": 139.9052937, "rate": 32.11, "rate_m": 30.56, "rate_f": 33.8, "voters": 8252, "turnout": 2650, "early_ratio": 32.22641509433962, "address": "千葉県市川市南行徳2丁目3-1"}, {"ku": 9, "name": "福栄中学校", "lat": 35.673886, "lng": 139.9101037, "rate": 32.21, "rate_m": 30.38, "rate_f": 34.29, "voters": 5896, "turnout": 1899, "early_ratio": 20.326487625065823, "address": "千葉県市川市福栄3丁目4-1"}, {"ku": 10, "name": "香取地域ふれあい館", "lat": 35.679101, "lng": 139.9099381, "rate": 30.68, "rate_m": 29.32, "rate_f": 32.2, "voters": 4632, "turnout": 1421, "early_ratio": 16.678395496129486, "address": "千葉県市川市香取2丁目19-1"}, {"ku": 11, "name": "南行徳小学校", "lat": 35.68037731, "lng": 139.9016029, "rate": 33.28, "rate_m": 32.58, "rate_f": 34.02, "voters": 3507, "turnout": 1167, "early_ratio": 17.652099400171377, "address": "千葉県市川市欠真間1丁目6-38"}, {"ku": 12, "name": "押切自治会館", "lat": 35.68558761, "lng": 139.9123128, "rate": 32.88, "rate_m": 31.71, "rate_f": 34.14, "voters": 3610, "turnout": 1187, "early_ratio": 21.145745577085087, "address": "千葉県市川市押切6-6"}, {"ku": 13, "name": "新浜小学校", "lat": 35.68000753, "lng": 139.9162687, "rate": 33.3, "rate_m": 31.45, "rate_f": 35.27, "voters": 7898, "turnout": 2630, "early_ratio": 24.068441064638783, "address": "千葉県市川市行徳駅前4丁目5-1"}, {"ku": 14, "name": "南新浜小学校", "lat": 35.67459847, "lng": 139.9165661, "rate": 35.68, "rate_m": 33.83, "rate_f": 37.61, "voters": 7603, "turnout": 2713, "early_ratio": 26.796903796535197, "address": "千葉県市川市新浜1丁目26-1"}, {"ku": 15, "name": "行徳支所", "lat": 35.68571564, "lng": 139.9163638, "rate": 31.0, "rate_m": 29.48, "rate_f": 32.73, "voters": 8702, "turnout": 2698, "early_ratio": 28.91030392883617, "address": "千葉県市川市末広1丁目1-31"}, {"ku": 16, "name": "伊勢宿自治会館", "lat": 35.68801542, "lng": 139.9148567, "rate": 35.07, "rate_m": 33.4, "rate_f": 36.91, "voters": 2800, "turnout": 982, "early_ratio": 20.977596741344197, "address": "千葉県市川市伊勢宿8丁目6"}, {"ku": 17, "name": "塩焼第二保育園", "lat": 35.68535964, "lng": 139.9245726, "rate": 38.37, "rate_m": 36.27, "rate_f": 40.67, "voters": 6593, "turnout": 2530, "early_ratio": 29.446640316205535, "address": "千葉県市川市塩焼3丁目11-15"}, {"ku": 18, "name": "幸小学校", "lat": 35.68101883, "lng": 139.9300964, "rate": 34.69, "rate_m": 33.3, "rate_f": 36.18, "voters": 9119, "turnout": 3163, "early_ratio": 29.56054378754347, "address": "千葉県市川市幸1丁目11-1"}, {"ku": 19, "name": "塩焼小学校", "lat": 35.68396611, "lng": 139.9301302, "rate": 35.14, "rate_m": 33.88, "rate_f": 36.42, "voters": 3517, "turnout": 1236, "early_ratio": 30.097087378640776, "address": "千葉県市川市塩焼5丁目9-8"}, {"ku": 20, "name": "妙典中学校", "lat": 35.68820014, "lng": 139.9335269, "rate": 35.81, "rate_m": 34.28, "rate_f": 37.54, "voters": 4583, "turnout": 1641, "early_ratio": 36.92870201096892, "address": "千葉県市川市妙典5丁目22-1"}, {"ku": 21, "name": "行徳小学校", "lat": 35.69260683, "lng": 139.9232959, "rate": 32.25, "rate_m": 32.07, "rate_f": 32.44, "voters": 6179, "turnout": 1993, "early_ratio": 43.753135975915704, "address": "千葉県市川市富浜1丁目1-40"}, {"ku": 22, "name": "本行徳公民館", "lat": 35.69455314, "lng": 139.9182408, "rate": 35.19, "rate_m": 33.55, "rate_f": 36.91, "voters": 7590, "turnout": 2671, "early_ratio": 35.679520778734556, "address": "千葉県市川市本行徳12-8"}, {"ku": 23, "name": "妙典小学校", "lat": 35.69604356, "lng": 139.9300422, "rate": 40.04, "rate_m": 39.77, "rate_f": 40.31, "voters": 5305, "turnout": 2124, "early_ratio": 40.01883239171375, "address": "千葉県市川市妙典2丁目14-2"}, {"ku": 24, "name": "二俣小学校", "lat": 35.69694186, "lng": 139.9565635, "rate": 28.47, "rate_m": 27.24, "rate_f": 29.84, "voters": 4166, "turnout": 1186, "early_ratio": 40.21922428330523, "address": "千葉県市川市二俣678"}, {"ku": 25, "name": "信篤市民体育館", "lat": 35.70171822, "lng": 139.9422201, "rate": 29.41, "rate_m": 26.27, "rate_f": 33.45, "voters": 7505, "turnout": 2207, "early_ratio": 26.144086995922066, "address": "千葉県市川市高谷1丁目8-2"}, {"ku": 26, "name": "原木中山ファミールハイツコミュニティセンター", "lat": 35.70689533, "lng": 139.9463056, "rate": 37.42, "rate_m": 36.63, "rate_f": 38.21, "voters": 3715, "turnout": 1390, "early_ratio": 15.971223021582734, "address": "千葉県市川市原木1丁目3-2"}, {"ku": 27, "name": "いきいきセンター田尻", "lat": 35.70352373, "lng": 139.9343643, "rate": 31.21, "rate_m": 29.55, "rate_f": 33.09, "voters": 9213, "turnout": 2875, "early_ratio": 32.55652173913043, "address": "千葉県市川市田尻4丁目13-3"}, {"ku": 28, "name": "第六中学校", "lat": 35.71165814, "lng": 139.9355349, "rate": 38.47, "rate_m": 37.96, "rate_f": 38.96, "voters": 5969, "turnout": 2296, "early_ratio": 33.10104529616725, "address": "千葉県市川市鬼高3丁目16-1"}, {"ku": 29, "name": "鬼高小学校", "lat": 35.7149145, "lng": 139.9376678, "rate": 42.16, "rate_m": 40.94, "rate_f": 43.31, "voters": 6077, "turnout": 2562, "early_ratio": 38.212334113973455, "address": "千葉県市川市鬼高2丁目13-5"}, {"ku": 30, "name": "中山小学校", "lat": 35.72113644, "lng": 139.9435301, "rate": 44.34, "rate_m": 42.5, "rate_f": 46.16, "voters": 4752, "turnout": 2107, "early_ratio": 42.14523018509729, "address": "千葉県市川市中山1丁目1-5"}, {"ku": 31, "name": "第四中学校", "lat": 35.72232614, "lng": 139.9457353, "rate": 45.47, "rate_m": 44.35, "rate_f": 46.62, "voters": 3429, "turnout": 1559, "early_ratio": 32.64913406029506, "address": "千葉県市川市中山1丁目11-1"}, {"ku": 32, "name": "中山清華園管理棟", "lat": 35.71719933, "lng": 139.9459862, "rate": 42.2, "rate_m": 41.22, "rate_f": 43.19, "voters": 2443, "turnout": 1031, "early_ratio": 31.71677982541222, "address": "千葉県市川市中山4丁目14-1"}, {"ku": 33, "name": "若宮小学校", "lat": 35.72630969, "lng": 139.951866, "rate": 41.75, "rate_m": 41.1, "rate_f": 42.38, "voters": 4489, "turnout": 1874, "early_ratio": 28.014941302027747, "address": "千葉県市川市若宮3丁目54-10"}, {"ku": 34, "name": "東部公民館", "lat": 35.72879947, "lng": 139.9507828, "rate": 37.63, "rate_m": 37.62, "rate_f": 37.64, "voters": 7226, "turnout": 2719, "early_ratio": 33.17396101507907, "address": "千葉県市川市本北方3丁目19-16"}, {"ku": 35, "name": "いきいきセンター北方", "lat": 35.72545833, "lng": 139.9410269, "rate": 47.01, "rate_m": 45.25, "rate_f": 48.71, "voters": 5265, "turnout": 2475, "early_ratio": 31.47474747474747, "address": "千葉県市川市北方2丁目29-9"}, {"ku": 36, "name": "冨貴島小学校", "lat": 35.72701469, "lng": 139.9376996, "rate": 51.7, "rate_m": 51.54, "rate_f": 51.85, "voters": 2818, "turnout": 1457, "early_ratio": 21.413864104323956, "address": "千葉県市川市八幡6丁目10-11"}, {"ku": 37, "name": "市役所第１庁舎", "lat": 35.721856, "lng": 139.931, "rate": 48.56, "rate_m": 47.08, "rate_f": 49.96, "voters": 6701, "turnout": 3254, "early_ratio": 36.69330055316534, "address": "千葉県市川市八幡1丁目1-1"}, {"ku": 38, "name": "市川教育会館", "lat": 35.71771392, "lng": 139.9296134, "rate": 41.89, "rate_m": 40.21, "rate_f": 43.73, "voters": 6259, "turnout": 2622, "early_ratio": 33.71472158657514, "address": "千葉県市川市南八幡1丁目10-19"}, {"ku": 39, "name": "勤労福祉センター", "lat": 35.71366208, "lng": 139.9272748, "rate": 41.58, "rate_m": 39.05, "rate_f": 44.23, "voters": 4380, "turnout": 1821, "early_ratio": 32.070291048874246, "address": "千葉県市川市南八幡2丁目20-1"}, {"ku": 40, "name": "稲荷木小学校", "lat": 35.71157136, "lng": 139.921744, "rate": 37.03, "rate_m": 35.51, "rate_f": 38.63, "voters": 5018, "turnout": 1858, "early_ratio": 27.28740581270183, "address": "千葉県市川市稲荷木1丁目14-1"}, {"ku": 41, "name": "大和田小学校", "lat": 35.71767431, "lng": 139.9216071, "rate": 45.08, "rate_m": 43.23, "rate_f": 47.0, "voters": 8207, "turnout": 3700, "early_ratio": 37.67567567567568, "address": "千葉県市川市大和田1丁目1-3"}, {"ku": 42, "name": "八幡小学校", "lat": 35.72600439, "lng": 139.9281004, "rate": 48.39, "rate_m": 48.28, "rate_f": 48.49, "voters": 7894, "turnout": 3820, "early_ratio": 31.151832460732987, "address": "千葉県市川市八幡3丁目24-1"}, {"ku": 43, "name": "菅野保育園", "lat": 35.73290242, "lng": 139.9271667, "rate": 47.21, "rate_m": 46.25, "rate_f": 48.13, "voters": 6840, "turnout": 3229, "early_ratio": 26.41684732115206, "address": "千葉県市川市菅野4丁目12-16"}, {"ku": 44, "name": "菅野小学校", "lat": 35.73430856, "lng": 139.91662, "rate": 48.52, "rate_m": 49.18, "rate_f": 47.91, "voters": 4538, "turnout": 2202, "early_ratio": 32.19800181653042, "address": "千葉県市川市菅野6丁目14-1"}, {"ku": 45, "name": "胡録神社", "lat": 35.72787319, "lng": 139.9165348, "rate": 46.37, "rate_m": 46.39, "rate_f": 46.34, "voters": 3302, "turnout": 1531, "early_ratio": 27.171783148269107, "address": "千葉県市川市新田1丁目3-1"}, {"ku": 46, "name": "平田小学校", "lat": 35.72419603, "lng": 139.9180984, "rate": 40.79, "rate_m": 40.21, "rate_f": 41.38, "voters": 6181, "turnout": 2521, "early_ratio": 28.08409361364538, "address": "千葉県市川市平田3丁目28-1"}, {"ku": 47, "name": "鶴指小学校", "lat": 35.71805592, "lng": 139.9155548, "rate": 41.96, "rate_m": 40.13, "rate_f": 43.88, "voters": 5643, "turnout": 2368, "early_ratio": 25.29560810810811, "address": "千葉県市川市大和田4丁目11-1"}, {"ku": 48, "name": "大洲保育園", "lat": 35.71606347, "lng": 139.911829, "rate": 42.77, "rate_m": 41.7, "rate_f": 43.83, "voters": 2724, "turnout": 1165, "early_ratio": 22.489270386266096, "address": "千葉県市川市大洲2丁目3-8"}, {"ku": 49, "name": "大洲中学校", "lat": 35.721389, "lng": 139.907783, "rate": 44.82, "rate_m": 44.35, "rate_f": 45.29, "voters": 6374, "turnout": 2857, "early_ratio": 26.916345817290864, "address": "千葉県市川市大洲4丁目21-5"}, {"ku": 50, "name": "大洲小学校", "lat": 35.7234455, "lng": 139.9068424, "rate": 45.96, "rate_m": 45.32, "rate_f": 46.6, "voters": 2800, "turnout": 1287, "early_ratio": 29.059829059829063, "address": "千葉県市川市大洲4丁目18-1"}, {"ku": 51, "name": "市川南保育園", "lat": 35.72700983, "lng": 139.9025786, "rate": 39.88, "rate_m": 37.87, "rate_f": 42.2, "voters": 3112, "turnout": 1241, "early_ratio": 23.932312651087834, "address": "千葉県市川市市川南4丁目1-15"}, {"ku": 52, "name": "市川地域ふれあい館", "lat": 35.73091419, "lng": 139.9035618, "rate": 48.57, "rate_m": 48.13, "rate_f": 48.96, "voters": 4593, "turnout": 2231, "early_ratio": 30.65889735544599, "address": "千葉県市川市市川2丁目7-7"}, {"ku": 53, "name": "宮田小学校", "lat": 35.72690375, "lng": 139.9092684, "rate": 43.01, "rate_m": 41.39, "rate_f": 44.59, "voters": 7126, "turnout": 3065, "early_ratio": 38.23817292006525, "address": "千葉県市川市新田4丁目8-15"}, {"ku": 54, "name": "男女共同参画センター", "lat": 35.73085453, "lng": 139.9104297, "rate": 43.07, "rate_m": 42.47, "rate_f": 43.6, "voters": 6947, "turnout": 2992, "early_ratio": 36.731283422459896, "address": "千葉県市川市市川1丁目24-2"}, {"ku": 55, "name": "市川小学校", "lat": 35.73215889, "lng": 139.9052769, "rate": 42.77, "rate_m": 41.95, "rate_f": 43.53, "voters": 5822, "turnout": 2490, "early_ratio": 34.97991967871486, "address": "千葉県市川市市川2丁目32-5"}, {"ku": 56, "name": "真間小学校", "lat": 35.73775333, "lng": 139.9102105, "rate": 46.75, "rate_m": 44.1, "rate_f": 49.31, "voters": 2417, "turnout": 1130, "early_ratio": 34.86725663716814, "address": "千葉県市川市真間4丁目1-1"}, {"ku": 57, "name": "第二中学校", "lat": 35.73914728, "lng": 139.9141654, "rate": 46.42, "rate_m": 45.98, "rate_f": 46.83, "voters": 2904, "turnout": 1348, "early_ratio": 29.896142433234424, "address": "千葉県市川市須和田2丁目34-1"}, {"ku": 58, "name": "第一中学校", "lat": 35.744718, "lng": 139.901083, "rate": 41.43, "rate_m": 41.79, "rate_f": 41.09, "voters": 1569, "turnout": 650, "early_ratio": 37.53846153846154, "address": "千葉県市川市国府台2丁目７-1"}, {"ku": 59, "name": "国府台小学校", "lat": 35.75411978, "lng": 139.9027517, "rate": 45.54, "rate_m": 46.16, "rate_f": 44.98, "voters": 4543, "turnout": 2069, "early_ratio": 34.07443209279845, "address": "千葉県市川市国府台5丁目25-4"}, {"ku": 60, "name": "いきいきセンター北国分", "lat": 35.75883958, "lng": 139.9035414, "rate": 40.76, "rate_m": 38.92, "rate_f": 42.6, "voters": 2878, "turnout": 1173, "early_ratio": 22.506393861892583, "address": "千葉県市川市北国分1丁目12-32"}, {"ku": 61, "name": "歴史博物館", "lat": 35.75983072, "lng": 139.9115136, "rate": 41.63, "rate_m": 39.98, "rate_f": 43.22, "voters": 4146, "turnout": 1726, "early_ratio": 15.237543453070684, "address": "千葉県市川市堀之内2丁目27-1"}, {"ku": 62, "name": "中国分小学校", "lat": 35.75365394, "lng": 139.9157875, "rate": 44.22, "rate_m": 43.0, "rate_f": 45.37, "voters": 5093, "turnout": 2252, "early_ratio": 39.34280639431616, "address": "千葉県市川市中国分1丁目22-1"}, {"ku": 63, "name": "チャレンジ国分", "lat": 35.74464914, "lng": 139.9155638, "rate": 48.33, "rate_m": 46.86, "rate_f": 49.67, "voters": 2576, "turnout": 1245, "early_ratio": 35.26104417670683, "address": "千葉県市川市国分3丁目22-27"}, {"ku": 64, "name": "国分小学校", "lat": 35.74498397, "lng": 139.9209401, "rate": 44.81, "rate_m": 44.04, "rate_f": 45.53, "voters": 3649, "turnout": 1635, "early_ratio": 29.541284403669728, "address": "千葉県市川市東国分2丁目4-1"}, {"ku": 65, "name": "須和田自治会館", "lat": 35.73618508, "lng": 139.9167566, "rate": 42.47, "rate_m": 41.56, "rate_f": 43.32, "voters": 2637, "turnout": 1120, "early_ratio": 36.51785714285714, "address": "千葉県市川市須和田2丁目22-7"}, {"ku": 66, "name": "曽谷小学校", "lat": 35.74724142, "lng": 139.9268294, "rate": 39.56, "rate_m": 37.61, "rate_f": 41.5, "voters": 6061, "turnout": 2398, "early_ratio": 32.068390325271054, "address": "千葉県市川市曽谷7丁目18-1"}, {"ku": 67, "name": "国分高校", "lat": 35.75328439, "lng": 139.927888, "rate": 37.47, "rate_m": 36.11, "rate_f": 38.82, "voters": 3993, "turnout": 1496, "early_ratio": 20.72192513368984, "address": "千葉県市川市稲越町310"}, {"ku": 68, "name": "曽谷春日神社", "lat": 35.74568083, "lng": 139.9355401, "rate": 40.43, "rate_m": 39.57, "rate_f": 41.25, "voters": 3146, "turnout": 1272, "early_ratio": 23.5062893081761, "address": "千葉県市川市曽谷2丁目7-5"}, {"ku": 69, "name": "第三中学校", "lat": 35.74032267, "lng": 139.9326312, "rate": 42.67, "rate_m": 41.99, "rate_f": 43.34, "voters": 5641, "turnout": 2407, "early_ratio": 30.120481927710845, "address": "千葉県市川市曽谷3丁目2-1"}, {"ku": 70, "name": "宮久保小学校", "lat": 35.73666925, "lng": 139.9439378, "rate": 43.56, "rate_m": 42.66, "rate_f": 44.42, "voters": 9088, "turnout": 3959, "early_ratio": 26.799696893154838, "address": "千葉県市川市宮久保5丁目7-1"}, {"ku": 71, "name": "下貝塚中学校", "lat": 35.73971086, "lng": 139.9457383, "rate": 34.5, "rate_m": 33.18, "rate_f": 35.78, "voters": 3974, "turnout": 1371, "early_ratio": 31.582786287381477, "address": "千葉県市川市下貝塚3丁目13-1"}, {"ku": 72, "name": "大野小学校", "lat": 35.74217086, "lng": 139.9503555, "rate": 39.3, "rate_m": 37.72, "rate_f": 40.8, "voters": 7008, "turnout": 2754, "early_ratio": 32.60711692084241, "address": "千葉県市川市南大野1丁目42-1"}, {"ku": 73, "name": "迎米公民館", "lat": 35.75045853, "lng": 139.948008, "rate": 37.0, "rate_m": 34.11, "rate_f": 39.97, "voters": 3035, "turnout": 1123, "early_ratio": 35.17364203027605, "address": "千葉県市川市大野町2丁目925"}, {"ku": 74, "name": "大柏出張所", "lat": 35.74522633, "lng": 139.9531835, "rate": 46.63, "rate_m": 46.64, "rate_f": 46.62, "voters": 5291, "turnout": 2467, "early_ratio": 33.23875152006486, "address": "千葉県市川市南大野2丁目3-19"}, {"ku": 75, "name": "柏井小学校", "lat": 35.73960672, "lng": 139.9665055, "rate": 33.72, "rate_m": 32.34, "rate_f": 35.12, "voters": 7485, "turnout": 2524, "early_ratio": 28.367670364500793, "address": "千葉県市川市柏井町1丁目1149-1"}, {"ku": 76, "name": "大野地域ふれあい館", "lat": 35.75801928, "lng": 139.9554206, "rate": 35.54, "rate_m": 35.06, "rate_f": 36.03, "voters": 6370, "turnout": 2264, "early_ratio": 25.4416961130742, "address": "千葉県市川市大野町3丁目1625-1"}, {"ku": 77, "name": "大町会館", "lat": 35.771856, "lng": 139.957143, "rate": 40.64, "rate_m": 38.79, "rate_f": 42.42, "voters": 1816, "turnout": 738, "early_ratio": 13.956639566395665, "address": "千葉県市川市大町273"}, {"ku": 78, "name": "大町第二団地集会所", "lat": 35.774676, "lng": 139.960901, "rate": 37.43, "rate_m": 33.39, "rate_f": 40.58, "voters": 1416, "turnout": 530, "early_ratio": 10.754716981132075, "address": "千葉県市川市大町124"}];
+const stats = {"rate_min": 26.11, "rate_max": 51.7, "rate_avg": 39.30935897435898, "voters_min": 1416, "voters_max": 9213, "total_voters": 400508, "total_turnout": 155197, "total_rate": 38.75003745243541};
+
+// 投票率→色（赤〜緑のグラデーション）
+function rateToColor(rate) {
+  const min = 26, max = 52; // 実データのレンジに基づく
+  const t = Math.max(0, Math.min(1, (rate - min) / (max - min)));
+  // 5段階補間（RdYlGn）
+  const stops = [
+    [0.00, [215, 48, 39]],   // #d73027
+    [0.25, [252, 141, 89]],  // #fc8d59
+    [0.50, [254, 224, 139]], // #fee08b
+    [0.75, [217, 239, 139]], // #d9ef8b
+    [1.00, [26, 152, 80]],   // #1a9850
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (t >= stops[i][0] && t <= stops[i+1][0]) {
+      const r = (t - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+      const c = [0,1,2].map(k => Math.round(stops[i][1][k] + r * (stops[i+1][1][k] - stops[i][1][k])));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+  }
+  return 'rgb(128,128,128)';
+}
+
+// 有権者数→半径（面積が有権者数に比例）
+function votersToRadius(voters) {
+  const minV = 1000, maxV = 10000;
+  const minR = 4, maxR = 16;
+  const t = (voters - minV) / (maxV - minV);
+  // 面積比例（sqrt）
+  return minR + (maxR - minR) * Math.sqrt(Math.max(0, Math.min(1, t)));
+}
+
+// 地図初期化（市川市全体が収まるよう中心・ズーム調整）
+const map = L.map('map').setView([35.718, 139.930], 12);
+
+L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
+  attribution: '地理院タイル (淡色地図)',
+  maxZoom: 18
+}).addTo(map);
+
+// 市川市行政界の読み込み（国土数値情報 / smartnews-smri/japan-topography 経由）
+// ブラウザ起動時に一度だけGitHubから取得
+fetch('https://raw.githubusercontent.com/smartnews-smri/japan-topography/main/data/municipality/geojson/s0010/N03-21_12_210101.json')
+  .then(r => r.json())
+  .then(geo => {
+    // 市川市（N03_007 = 12203）のフィーチャだけ抽出
+    const ichikawa = {
+      type: 'FeatureCollection',
+      features: geo.features.filter(f => f.properties.N03_007 === '12203' || f.properties.N03_003 === '市川市')
+    };
+    L.geoJSON(ichikawa, {
+      style: {
+        color: '#1F4E78',
+        weight: 2.5,
+        opacity: 0.85,
+        fillColor: '#1F4E78',
+        fillOpacity: 0.04,
+        dashArray: '6, 4',
+      },
+      interactive: false,
+    }).addTo(map);
+    console.log('市川市境界 読込成功: ' + ichikawa.features.length + ' features');
+  })
+  .catch(err => {
+    console.warn('市川市境界の読込に失敗しました: ', err);
+  });
+
+// バブル配置
+points.forEach(p => {
+  const color = rateToColor(p.rate);
+  const radius = votersToRadius(p.voters);
+  
+  const circle = L.circleMarker([p.lat, p.lng], {
+    radius: radius,
+    fillColor: color,
+    color: '#333',
+    weight: 1.2,
+    opacity: 0.9,
+    fillOpacity: 0.75,
+  }).addTo(map);
+  
+  const rateClass = p.rate >= 45 ? 'high' : (p.rate <= 32 ? '' : '');
+  const rateColor = p.rate >= 45 ? '#1a9850' : (p.rate <= 32 ? '#d73027' : '#E69500');
+  
+  const popup = `
+    <div class="popup-content">
+      <h3>${p.ku}. ${p.name}</h3>
+      <div style="font-size:11px;color:#666;">${p.address}</div>
+      <table>
+        <tr><td>投票率</td><td style="color:${rateColor};font-size:16px;">${p.rate.toFixed(2)}%</td></tr>
+        <tr><td>有権者数</td><td>${p.voters.toLocaleString()}人</td></tr>
+        <tr><td>投票者数</td><td>${p.turnout.toLocaleString()}人</td></tr>
+        <tr><td>男性投票率</td><td>${p.rate_m.toFixed(2)}%</td></tr>
+        <tr><td>女性投票率</td><td>${p.rate_f.toFixed(2)}%</td></tr>
+        <tr><td>期日前比率</td><td>${p.early_ratio.toFixed(1)}%</td></tr>
+      </table>
+    </div>
+  `;
+  circle.bindPopup(popup);
+  circle.bindTooltip(`${p.ku}. ${p.name}<br>投票率 ${p.rate.toFixed(2)}% / 有権者 ${p.voters.toLocaleString()}人`, {sticky: true});
+});
+
+// 凡例
+const legend = L.control({position: 'bottomright'});
+legend.onAdd = function() {
+  const div = L.DomUtil.create('div', 'legend');
+  div.innerHTML = `
+    <div class="legend-title">凡例</div>
+    <div><strong>色 = 投票率</strong></div>
+    <div class="legend-gradient">
+      <span>低</span><div class="gradient-bar"></div><span>高</span>
+    </div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px;">
+      26% <span style="margin-left:62px;">39%</span> <span style="margin-left:62px;">52%</span>
+    </div>
+    <div><strong>大きさ = 有権者数</strong></div>
+    <div class="legend-size">
+      <div class="size-circle" style="width:8px;height:8px;"></div><span>約1,500人</span>
+    </div>
+    <div class="legend-size">
+      <div class="size-circle" style="width:16px;height:16px;"></div><span>約5,000人</span>
+    </div>
+    <div class="legend-size">
+      <div class="size-circle" style="width:28px;height:28px;"></div><span>約9,000人</span>
+    </div>
+    <div style="margin-top:8px;padding-top:6px;border-top:1px solid #ddd;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg width="24" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="#1F4E78" stroke-width="2.5" stroke-dasharray="6,4"/></svg>
+        <span style="font-size:11px;">市川市行政界</span>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">出典: 国土交通省 国土数値情報</div>
+    </div>
+  `;
+  return div;
+};
+legend.addTo(map);
+
+// 投票率トップ5を地図上に表示
+const topPoints = [...points].sort((a,b) => b.rate - a.rate).slice(0,5);
+const bottomPoints = [...points].sort((a,b) => a.rate - b.rate).slice(0,5);
+console.log('Top5:', topPoints.map(p => `${p.ku}.${p.name}(${p.rate}%)`));
+console.log('Bottom5:', bottomPoints.map(p => `${p.ku}.${p.name}(${p.rate}%)`));
+</script>
+</body>
+</html>
