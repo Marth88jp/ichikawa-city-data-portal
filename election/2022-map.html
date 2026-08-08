@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>市川市長選挙 投票率バブルチャート</title>
+<title>市川市長選挙（令和4年3月27日）投票率</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -10,18 +10,14 @@
 body { font-family: "Yu Gothic", "Hiragino Sans", sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
 .header {
   background: linear-gradient(135deg, #1F4E78 0%, #2E6DA4 100%);
-  color: white; padding: 16px 24px;
+  color: white; padding: 8px 18px;
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
 }
-.header h1 { margin: 0; font-size: 20px; }
-.header .sub { font-size: 13px; opacity: 0.9; margin-top: 4px; }
-.stats {
-  display: flex; gap: 16px; background: white; padding: 12px 24px;
-  border-bottom: 1px solid #ddd; font-size: 13px; flex-wrap: wrap;
-}
-.stat-item { display: flex; flex-direction: column; }
-.stat-label { color: #666; font-size: 11px; }
-.stat-value { font-weight: bold; color: #1F4E78; font-size: 15px; }
-#map { height: calc(100vh - 140px); min-height: 500px; width: 100%; }
+.header h1 { margin: 0; font-size: 15px; }
+.header .sub { font-size: 11px; opacity: 0.9; }
+.header .kpi { font-size: 11px; opacity: 0.95; margin-left: auto; }
+.header .kpi b { color: #FFE082; font-size: 13px; margin: 0 4px; }
+#map { height: calc(100vh - 42px); min-height: 500px; width: 100%; }
 .legend {
   background: white; padding: 12px 16px; border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-size: 12px;
@@ -33,7 +29,7 @@ body { font-family: "Yu Gothic", "Hiragino Sans", sans-serif; margin: 0; padding
 }
 .gradient-bar {
   width: 180px; height: 14px; border-radius: 3px;
-  background: linear-gradient(to right, #d73027 0%, #fc8d59 25%, #fee08b 50%, #d9ef8b 75%, #1a9850 100%);
+  background: linear-gradient(to right, #084594 0%, #63a9d6 25%, #ffffbf 50%, #fd8d3c 75%, #b30000 100%);
   border: 1px solid #999;
 }
 .legend-size { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
@@ -47,21 +43,15 @@ body { font-family: "Yu Gothic", "Hiragino Sans", sans-serif; margin: 0; padding
 .popup-content td { padding: 2px 4px; }
 .popup-content td:first-child { color: #666; white-space: nowrap; }
 .popup-content td:last-child { text-align: right; font-weight: bold; }
-.rate-highlight { color: #d73027; font-size: 16px !important; }
-.rate-highlight.high { color: #1a9850; }
+.rate-highlight { color: #b30000; font-size: 16px !important; }
+.rate-highlight.high { color: #084594; }
 </style>
 </head>
 <body>
 <div class="header">
-  <h1>🗺️ 市川市長選挙（令和4年3月27日）投票率バブルチャート</h1>
-  <div class="sub">色 = 投票率（赤=低／緑=高）・大きさ = 有権者数</div>
-</div>
-<div class="stats">
-  <div class="stat-item"><span class="stat-label">全体投票率</span><span class="stat-value">38.75%</span></div>
-  <div class="stat-item"><span class="stat-label">有権者総数</span><span class="stat-value">400,508人</span></div>
-  <div class="stat-item"><span class="stat-label">投票者総数</span><span class="stat-value">155,197人</span></div>
-  <div class="stat-item"><span class="stat-label">投票区数</span><span class="stat-value">78区</span></div>
-  <div class="stat-item"><span class="stat-label">投票率レンジ</span><span class="stat-value">26.11%〜51.70%</span></div>
+  <h1>🗺️ 市川市長選挙（令和4年3月27日）投票率</h1>
+  <span class="sub">確定値 ・ 色=投票率（青=低／赤=高）・ 大きさ=有権者数</span>
+  <span class="kpi">全体 <b>38.75%</b> ・ 有権者 <b>400,508</b>人 ・ 投票者 <b>155,197</b>人 ・ レンジ <b>26.11〜51.70%</b></span>
 </div>
 <div id="map"></div>
 
@@ -73,13 +63,13 @@ const stats = {"rate_min": 26.11, "rate_max": 51.7, "rate_avg": 39.3093589743589
 function rateToColor(rate) {
   const min = 26, max = 52; // 実データのレンジに基づく
   const t = Math.max(0, Math.min(1, (rate - min) / (max - min)));
-  // 5段階補間（RdYlGn）
+  // 5段階補間（青=低 → 赤=高）
   const stops = [
-    [0.00, [215, 48, 39]],   // #d73027
-    [0.25, [252, 141, 89]],  // #fc8d59
-    [0.50, [254, 224, 139]], // #fee08b
-    [0.75, [217, 239, 139]], // #d9ef8b
-    [1.00, [26, 152, 80]],   // #1a9850
+    [0.00, [  8,  69, 148]],  // 濃青（低）
+    [0.25, [ 99, 169, 214]],  // 水色
+    [0.50, [255, 255, 191]],  // 薄黄（中央）
+    [0.75, [253, 141,  60]],  // 橙
+    [1.00, [179,   0,   0]],  // 濃赤（高）
   ];
   for (let i = 0; i < stops.length - 1; i++) {
     if (t >= stops[i][0] && t <= stops[i+1][0]) {
@@ -100,7 +90,7 @@ function votersToRadius(voters) {
   return minR + (maxR - minR) * Math.sqrt(Math.max(0, Math.min(1, t)));
 }
 
-// 地図初期化（市川市全体が収まるよう中心・ズーム調整）
+// 地図初期化（市川市全体が収まるよう後でfitBoundsする）
 const map = L.map('map').setView([35.718, 139.930], 12);
 
 L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
@@ -149,8 +139,7 @@ points.forEach(p => {
     fillOpacity: 0.75,
   }).addTo(map);
   
-  const rateClass = p.rate >= 45 ? 'high' : (p.rate <= 32 ? '' : '');
-  const rateColor = p.rate >= 45 ? '#1a9850' : (p.rate <= 32 ? '#d73027' : '#E69500');
+  const rateColor = p.rate >= 45 ? '#b30000' : (p.rate <= 32 ? '#084594' : '#888');
   
   const popup = `
     <div class="popup-content">
@@ -169,6 +158,10 @@ points.forEach(p => {
   circle.bindPopup(popup);
   circle.bindTooltip(`${p.ku}. ${p.name}<br>投票率 ${p.rate.toFixed(2)}% / 有権者 ${p.voters.toLocaleString()}人`, {sticky: true});
 });
+
+// 全投票所が画面にちょうど収まるようにズーム・中心を自動調整
+const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng]));
+map.fitBounds(bounds, { padding: [10, 10] });
 
 // 凡例
 const legend = L.control({position: 'bottomright'});
